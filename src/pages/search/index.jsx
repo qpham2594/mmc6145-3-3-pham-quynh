@@ -1,5 +1,5 @@
 import BookPreview from "../../components/bookPreview";
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import styles from './style.module.css'
 
 export default function Search() {
@@ -16,7 +16,19 @@ export default function Search() {
   // https://www.googleapis.com/books/v1/volumes?langRestrict=en&maxResults=16&q=YOUR_QUERY
   // Use a query of "React"
 
-  
+  useEffect(() => {
+    async function searchPage() {
+      try {
+        const res = await fetch (`https://www.googleapis.com/books/v1/volumes?langRestrict=en&maxResults=16&q=React`)
+        const data = await res.json()
+        setBookSearchResults(data.items)
+        console.log(data.items)
+      } catch (error) {
+        console.error('Unable to fetch data', error)
+      }
+    }
+    searchPage()
+  },[])
 
   // TODO: Write a submit handler for the form that fetches data from:
   // https://www.googleapis.com/books/v1/volumes?langRestrict=en&maxResults=16&q=YOUR_QUERY
@@ -25,6 +37,30 @@ export default function Search() {
   // fetch has not finished
   // the query is unchanged
 
+  // Quynh's reference for "finally": https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Control_flow_and_error_handling
+
+
+  async function submitHandler(e) {
+    e.preventDefault()
+    console.log('submitHandler query value:', query)
+    
+    if (fetching || query === previousQuery || query === '') {
+      return
+    }
+
+    try {
+      setFetching(true)
+      const res = await fetch (`https://www.googleapis.com/books/v1/volumes?langRestrict=en&maxResults=16&q=${query}`)
+      const data = await res.json()
+      setBookSearchResults(data.items)
+      setPreviousQuery(query)
+    } catch(error) {
+      console.error('Error with submit handler', error)
+    } finally {
+      setFetching(false)
+    }
+  }
+
   const inputRef = useRef()
   const inputDivRef = useRef()
 
@@ -32,9 +68,9 @@ export default function Search() {
     <main className={styles.search}>
       <h1>Book Search</h1>
       {/* TODO: add an onSubmit handler */}
-      <form className={styles.form}>
+      <form className={styles.form} onSubmit={submitHandler}>
         <label htmlFor="book-search">Search by author, title, and/or keywords:</label>
-        <div ref={inputDivRef}>
+        <div ref={inputDivRef} value={query} onChange={(e) => setQuery(e.target.value)}>
           {/* TODO: add value and onChange props to the input element based on query/setQuery */}
           <input
             ref={inputRef}
@@ -54,6 +90,15 @@ export default function Search() {
         : bookSearchResults?.length
         ? <div className={styles.bookList}>
             {/* TODO: render BookPreview components for each search result here based on bookSearchResults */}
+            {bookSearchResults.map((item, index) => (
+              <BookPreview
+                key={index}
+                title = {item.volumeInfo.title}
+                authors={item.volumeInfo.authors}
+                thumbnail={item.volumeInfo.imageLinks.thumbnail}
+                previewLink={item.volumeInfo.previewLink}
+              />
+            ))}
           </div>
         : <NoResults
           {...{inputRef, inputDivRef, previousQuery}}
