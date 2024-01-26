@@ -22,12 +22,12 @@ export default function Search() {
         const res = await fetch (`https://www.googleapis.com/books/v1/volumes?langRestrict=en&maxResults=16&q=React`)
         const data = await res.json()
         setBookSearchResults(data.items)
-        console.log(data.items)
       } catch (error) {
         console.error('Unable to fetch data', error)
       }
     }
     searchPage()
+    
   },[])
 
   // TODO: Write a submit handler for the form that fetches data from:
@@ -42,7 +42,6 @@ export default function Search() {
 
   async function submitHandler(e) {
     e.preventDefault()
-    console.log('submitHandler query value:', query)
     
     if (fetching || query === previousQuery || query === '') {
       return
@@ -92,12 +91,19 @@ export default function Search() {
         : bookSearchResults?.length
         ? <div className={styles.bookList}>
             {/* TODO: render BookPreview components for each search result here based on bookSearchResults */}
+
+            {/* Quynh's note: thumbnail could be undefined or empty. To handle this issue, use ternary operator.
+            Recap: this would be taken place for if statement:  thumbnail={item.volumeInfo.imageLinks?.thumbnail || ''}
+            means if imageLinks is undefined or not there, then it wouldn't try to search for thumbnail. If that's the case,
+            then it will return an empty string.*/}
+
             {bookSearchResults.map((item, index) => (
               <BookPreview
+               
                 key={index}
                 title = {item.volumeInfo.title}
                 authors={item.volumeInfo.authors}
-                thumbnail={item.volumeInfo.imageLinks.thumbnail}
+                thumbnail={item.volumeInfo.imageLinks?.thumbnail || ''}
                 previewLink={item.volumeInfo.previewLink}
               />
             ))}
